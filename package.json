@@ -1,0 +1,16 @@
+{
+  "name": "etsy-cli",
+  "version": "0.0.0",
+  "description": "A collection of ad-hoc code an scripts for working with the Etsy public API.",
+  "main": "run.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "minimist": "^1.1.0",
+    "node-oauth": "^0.1.3",
+    "oauth": "^0.9.12"
+  }
+}
