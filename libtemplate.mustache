@@ -1,0 +1,28 @@
+(function() {
+
+    var Etsy = {};
+
+    Etsy.init = function(access_token, secret_access_token) {
+        this.access_token = access_token;
+        this.secret_access_token = secret_access_token;
+    };
+
+    {{#types}}
+        Etsy.{{.}} = {};
+    {{/types}}
+
+    {{#methods}}
+        Etsy.{{#.}}{{type}}{{/.}}.{{#.}}{{name}}{{/.}} = function(params, callback) {
+            var uri = "{{#.}}{{{uri}}}{{/.}}";
+
+            for (var key in params) {
+                uri = uri.replace(':" + key, params[key]);
+            }
+
+            // TODO method
+            oauth.get(uri, this.access_token, this.secret_access_token, callback);
+
+        };
+    {{/methods}}
+
+})()

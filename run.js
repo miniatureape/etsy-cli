@@ -1,10 +1,13 @@
 
-var open = require('open');
-var fs = require('fs');
-var path = require('path');
+var fs       = require('fs');
+var path     = require('path');
 var readline = require('readline');
-var argv = require('minimist')(process.argv.slice(2));
-var OAuth = require('oauth');
+
+var _        = require('underscore');
+var argv     = require('minimist')(process.argv.slice(2));
+var open     = require('open');
+var OAuth    = require('oauth');
+var mustache = require('mustache');
 
 var oauth = new OAuth.OAuth(
   'https://openapi.etsy.com/v2/oauth/request_token',
@@ -37,8 +40,8 @@ var runCommand = function(argv) {
         authenticate(argv);
     }
 
-    if (argv._.indexOf('fetch') != -1) {
-        fetch(argv);
+    if (argv._.indexOf('generate') != -1) {
+        generate(argv);
     }
 };
 
@@ -78,15 +81,22 @@ var authenticate = function() {
 
 };
 
-var fetch = function() {
-
+var generate = function() {
     var tokens = JSON.parse(fs.readFileSync(getTokenPath()));
-    console.log(tokens);
-    oauth.get('https://openapi.etsy.com/v2/shops/weekendsandnights/receipts', tokens['access_token'], tokens['secret_access_token'], function() {
-        console.log(arguments);
+    oauth.get('https://openapi.etsy.com/v2/', tokens['access_token'], tokens['secret_access_token'], function(nil, response) {
+        var response = JSON.parse(response);
+        var methods = response.results;
+
+        var types = _.compact(_.uniq(_.map(methods, function(method) {
+            if (!_.contains(['String', 'Int', null, 'array', 'Dict'], method.type)) {
+                return method.type;
+            }
+        })));
+
+        var template = fs.readFileSync('libtemplate.mustache');
+        var out = mustache.render(template.toString(), {types: types, methods: methods});
+        console.log(out);
     });
-
-
 }
 
 runCommand(argv);
