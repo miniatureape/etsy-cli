@@ -9,8 +9,8 @@ var OAuth = require('oauth');
 var oauth = new OAuth.OAuth(
   'https://openapi.etsy.com/v2/oauth/request_token',
   'https://openapi.etsy.com/v2/oauth/access_token',
-  '<consumer_key>',
-  '<consumer_secret>',
+  'key',
+  'secret',
   '1.0A',
   null,
   'HMAC-SHA1'
@@ -33,9 +33,12 @@ var ensureDirectory = function() {
 };
 
 var runCommand = function(argv) {
-    console.log(argv);
     if (argv._.indexOf('authenticate') != -1) {
         authenticate(argv);
+    }
+
+    if (argv._.indexOf('fetch') != -1) {
+        fetch(argv);
     }
 };
 
@@ -56,7 +59,9 @@ var authenticate = function() {
 
             rl.question("Enter verifier key: ", function(verifier) {
                 var verifier = verifier;
-                oauth.getOAuthAccessToken(oauth_token, oauth_token_secret, verifier, function(access_token, secret_access_token) {
+                oauth.getOAuthAccessToken(oauth_token, oauth_token_secret, verifier, function(nil, access_token, secret_access_token) {
+
+                    // console.log(access_token, secret_access_token);
 
                     var fd = fs.openSync(getTokenPath(), 'w');
                     fs.writeSync(fd, JSON.stringify({
@@ -72,5 +77,16 @@ var authenticate = function() {
     });
 
 };
+
+var fetch = function() {
+
+    var tokens = JSON.parse(fs.readFileSync(getTokenPath()));
+    console.log(tokens);
+    oauth.get('https://openapi.etsy.com/v2/shops/weekendsandnights/receipts', tokens['access_token'], tokens['secret_access_token'], function() {
+        console.log(arguments);
+    });
+
+
+}
 
 runCommand(argv);
