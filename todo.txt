@@ -1,0 +1,4 @@
+Next:
+Map all th methods so they're keyed off of return type.
+Generate the code with these methods as properties of the blank objects you're now creating.
+

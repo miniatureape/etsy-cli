@@ -1,28 +1,61 @@
-(function() {
 
-    var Etsy = {};
+module.exports = (function() {
 
-    Etsy.init = function(access_token, secret_access_token) {
-        this.access_token = access_token;
-        this.secret_access_token = secret_access_token;
-    };
+    var apiKey            = key;
+    var accessToken       = tokens['access_token'];
+    var secretAccessToken = tokens['secret_access_token'];
 
-    {{#types}}
-        Etsy.{{.}} = {};
-    {{/types}}
+    return {
 
-    {{#methods}}
-        Etsy.{{#.}}{{type}}{{/.}}.{{#.}}{{name}}{{/.}} = function(params, callback) {
-            var uri = "{{#.}}{{{uri}}}{{/.}}";
+        setApiKey: function(key) {
+            apiKey = key;
+        },
 
-            for (var key in params) {
-                uri = uri.replace(':" + key, params[key]);
-            }
+        setOAuthTokens: function(tokens) {
+            accessToken = tokens['access_token'];
+            secretAccessToken = tokens['secret_access_token'];
+        },
 
-            // TODO method
-            oauth.get(uri, this.access_token, this.secret_access_token, callback);
+        {{#types}}
+        {{.}}: {},
+        {{/types}}
 
-        };
-    {{/methods}}
+        {{#methods}}
+            {{type}}.{{name}}: function(params) {
+                var uri = "{{#.}}{{{uri}}}{{/.}}";
+                for (var key in params) {
+                    uri = uri.replace(':' + key, params[key]);
+                }
+                var result;
+
+                {{#requires_oauth}}
+                if (accessToken && secretAccessToken) {
+                    {{#is_get}}
+                        result = oauth.get(uri, accessToken, secretAccessToken, callback);
+                    {{/is_get}}
+                    {{#is_post}}
+                        // TODO make these arguments match the oauth post args
+                        result = oauth.post(uri, accessToken, secretAccessToken, callback);
+                    {{/is_post}}
+                    {{#is_put}}
+                        // TODO make these arguments match the oauth put args
+                        result = oauth.put(uri, accessToken, secretAccessToken, callback);
+                    {{/is_put}}
+                    {{#is_delete}}
+                        // TODO make these arguments match the oauth put args
+                        result = oauth.put(uri, accessToken, secretAccessToken, callback);
+                    {{/is_delete}}
+                } else {
+                    throw("Must set access token and secret_access_token");
+                }
+                {{/requires_oauth}}
+                {{^requires_oauth}}
+                console.log('TODO: non oauth requests');
+                {{/requires_oauth}}
+                return result;
+            },
+        {{/methods}}
 
 })()
+
+module.exports = Etsy;

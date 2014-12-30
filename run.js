@@ -12,8 +12,8 @@ var mustache = require('mustache');
 var oauth = new OAuth.OAuth(
   'https://openapi.etsy.com/v2/oauth/request_token',
   'https://openapi.etsy.com/v2/oauth/access_token',
-  'key',
-  'secret',
+  'fbu7k8r50janekpm74ne3ztt',
+  'pwzucy7cpk',
   '1.0A',
   null,
   'HMAC-SHA1'
@@ -42,6 +42,10 @@ var runCommand = function(argv) {
 
     if (argv._.indexOf('generate') != -1) {
         generate(argv);
+    }
+
+    if (argv._.indexOf('test') != -1) {
+        testClient(argv);
     }
 };
 
@@ -87,16 +91,38 @@ var generate = function() {
         var response = JSON.parse(response);
         var methods = response.results;
 
-        var types = _.compact(_.uniq(_.map(methods, function(method) {
-            if (!_.contains(['String', 'Int', null, 'array', 'Dict'], method.type)) {
-                return method.type;
-            }
-        })));
+        methods = _.sortBy(methods, function(method) {
+            return method.type;
+        });
+
+        var methods = _.map(methods, function(method) {
+            var required_params = _.without(_.keys(method.params), _.keys(method.defaults));
+            method._uri = method.uri;
+            _.each(required_params, function(param) {
+                method._uri = method._uri.replace(":" + param, '+ params.' + param + ' +');
+                method.requires_oauth = method.visibility === 'private';
+                method.is_get = method.http_method === 'GET';
+                method.is_post = method.http_method === 'POST';
+                method.is_put = method.http_method === 'PUT';
+                method.is_delete = method.http_method === 'DELETE';
+            });
+            return method
+        });
 
         var template = fs.readFileSync('libtemplate.mustache');
         var out = mustache.render(template.toString(), {types: types, methods: methods});
-        console.log(out);
+
     });
+}
+
+var testClient = function() {
+    var EtsyClient = require('./client');
+    console.log(EtsyClient);
+    var etsyClient = new EtsyClient();
+    var tokens = JSON.parse(fs.readFileSync(getTokenPath()));
+    etsyClient.setOAuthTokens(tokens);
+    console.log(etsyClient);
+    etsyClient.Listing.findAllShopListingsDraft({shop_id: 'weekendsandnights'});
 }
 
 runCommand(argv);
